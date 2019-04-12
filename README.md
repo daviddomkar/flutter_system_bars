@@ -71,7 +71,7 @@ landscapeMargin - default: false - specifies if margin is enabled in landscape m
 
 navigationBarMargin - default: true - specifies if margin is enabled for navigation bar
 
-portraitMargin - default: true - specifies if margin is enabled for status bar
+statusBarMargin - default: true - specifies if margin is enabled for status bar
 
 ## Disclaimer
 
