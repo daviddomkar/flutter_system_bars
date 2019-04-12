@@ -24,7 +24,33 @@ class MyApp extends StatelessWidget {
               colors: [Color.fromARGB(255, 223, 61, 139), Color.fromARGB(255, 86, 147, 219)],
             ),
           ),
-          child: SystemBarsMarginBox(
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints viewportConstraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: viewportConstraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: SystemBarsMarginBox(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                            Text('Content is below',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.white, fontSize: 20)),
+                            Text('While the app occupies the entire screen.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.white, fontSize: 20)),
+                            Text('and above system bars.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.white, fontSize: 20)),
+                          ])),
+                    )),
+              );
+            },
+          ), /*SystemBarsMarginBox(
             portraitMargin: true,
             landscapeMargin: false,
             navigationBarMargin: true,
@@ -43,7 +69,7 @@ class MyApp extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white, fontSize: 20)),
                 ]),
-          ),
+          ),*/
         ),
       ),
     );

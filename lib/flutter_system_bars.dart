@@ -31,17 +31,14 @@ class SystemBarsInfo {
   final double statusBarHeight;
 }
 
-typedef SystemBarsInfoProviderWidgetBuilder = Widget Function(
-    BuildContext context, SystemBarsInfo sustemBarsInfo, Orientation orientation);
+typedef Widget SystemBarsInfoProviderWidgetBuilder(
+    BuildContext context, Widget child, SystemBarsInfo systemBarsInfo, Orientation orientation);
 
 class SystemBarsInfoProvider extends StatefulWidget {
-  const SystemBarsInfoProvider({
-    Key key,
-    @required this.builder,
-  })  : assert(builder != null),
-        super(key: key);
+  const SystemBarsInfoProvider({@required this.builder, this.child});
 
   final SystemBarsInfoProviderWidgetBuilder builder;
+  final Widget child;
 
   @override
   _SystemBarsInfoProviderState createState() => _SystemBarsInfoProviderState();
@@ -51,8 +48,8 @@ class _SystemBarsInfoProviderState extends State<SystemBarsInfoProvider> {
   SystemBarsInfo _systemBarsInfo = SystemBarsInfo(false, 0.0, 0.0);
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     getSystemBarsInfo(context);
   }
 
@@ -79,12 +76,11 @@ class _SystemBarsInfoProviderState extends State<SystemBarsInfoProvider> {
 
   @override
   Widget build(BuildContext context) {
-    return OrientationBuilder(
-      builder: (context, orientation) {
-        getSystemBarsInfo(context);
-        return this.widget.builder(context, _systemBarsInfo, orientation);
-      },
-    );
+    getSystemBarsInfo(context);
+
+    return this
+        .widget
+        .builder(context, this.widget.child, _systemBarsInfo, MediaQuery.of(context).orientation);
   }
 }
 
@@ -106,7 +102,12 @@ class SystemBarsMarginBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SystemBarsInfoProvider(builder: (context, systemBarsInfo, orientation) {
+    return SystemBarsInfoProvider(builder: (
+      context,
+      child,
+      systemBarsInfo,
+      orientation,
+    ) {
       return Container(
         margin: EdgeInsets.only(
             left: 0.0,

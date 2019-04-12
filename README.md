@@ -14,7 +14,7 @@ This widget provides info about system bar heights and if software navigation ba
 
 ```dart
 SystemBarsInfoProvider(
-  builder: (context, systemBarsInfo, orientation) {
+  builder: (context, child, systemBarsInfo, orientation) {
     return Center(
       child: Text(systemBarsInfo.navigationBarHeight, 
         textAlign: TextAlign.center, 
@@ -26,6 +26,7 @@ SystemBarsInfoProvider(
 ```
 
 You have to pass in the builder in which you get SystemBarsInfo object and device Orientation for convenience.
+The child parameter is optional. You can pass child parameter to SystemBarsInfoProvider constructor and it is not affected by changes in layout.
 
 SystemBarsInfo contains information about system bars:
 
