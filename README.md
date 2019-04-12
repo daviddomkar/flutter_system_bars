@@ -2,7 +2,7 @@
 
 Flutter plugin that helps you create immersive experience for your app by defining margins based on system bars dimensions.
 
-![Screenshot](https://i.imgur.com/tfOu1bF.png)
+![Screenshot](https://i.imgur.com/tfOu1bF.png =500x)
 
 ## Usage
 
