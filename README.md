@@ -66,8 +66,11 @@ SystemBarsMarginBox(
 SystemBarsMarginBox settings and their default values:
 
 portraitMargin - default: true - specifies if margin is enabled in portrait mode
+
 landscapeMargin - default: false - specifies if margin is enabled in landscape mode
+
 navigationBarMargin - default: true - specifies if margin is enabled for navigation bar
+
 portraitMargin - default: true - specifies if margin is enabled for status bar
 
 ## Disclaimer
