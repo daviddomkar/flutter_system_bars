@@ -76,8 +76,6 @@ class _SystemBarsInfoProviderState extends State<SystemBarsInfoProvider> {
 
   @override
   Widget build(BuildContext context) {
-    getSystemBarsInfo(context);
-
     return this
         .widget
         .builder(context, this.widget.child, _systemBarsInfo, MediaQuery.of(context).orientation);

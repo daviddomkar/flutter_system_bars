@@ -1,6 +1,6 @@
 name: flutter_system_bars
 description: Flutter plugin that helps you create immersive experience for your app by defining margins based on system bars dimensions.
-version: 0.0.5
+version: 0.0.6
 author: David Domkář <dexdev.io@gmail.com>
 homepage: https://github.com/DEXIT33/flutter_system_bars
 
