@@ -1,41 +1,50 @@
 package io.dexdev.flutter_system_bars
 
+import android.app.Activity
+import android.content.Context
+import androidx.annotation.NonNull
+import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry.Registrar
-import android.util.DisplayMetrics
-import android.os.Build
-import android.view.*
-import android.content.res.Configuration
-import android.view.KeyCharacterMap
-import android.view.ViewConfiguration
-import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.PluginRegistry.Registrar
 
-class FlutterSystemBarsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
+class FlutterSystemBarsPlugin: FlutterPlugin, ActivityAware {
 
-  private lateinit var channel: MethodChannel
-  private var activityBinding: ActivityPluginBinding? = null
+  private var channel: MethodChannel? = null
+  private var handler: MethodCallHandlerImpl? = null
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.binaryMessenger, channelName)
-    channel.setMethodCallHandler(FlutterSystemBarsPlugin())
+    Log.w(MethodCallHandlerImpl.channelName, "FlutterPlugin#onAttachedToEngine")
+    setupChannel(flutterPluginBinding.binaryMessenger, flutterPluginBinding.applicationContext, null)
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
+    Log.w(MethodCallHandlerImpl.channelName, "FlutterPlugin#onDetachedFromEngine")
+    teardownChannel()
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-    activityBinding = binding
+    Log.w(MethodCallHandlerImpl.channelName, "ActivityAware#onAttachedToActivity")
+    handler?.activity = binding.activity
+    Log.w(MethodCallHandlerImpl.channelName, "Has activity ${handler?.activity != null}")
+  }
+
+  override fun onDetachedFromActivity() {
+    Log.w(MethodCallHandlerImpl.channelName, "ActivityAware#onDetachedFromActivity")
+    handler?.activity = null
+  }
+
+  override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+    Log.w(MethodCallHandlerImpl.channelName, "ActivityAware#onReattachedToActivityForConfigChanges")
+    handler?.activity = binding.activity
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
-    activityBinding = null
+    Log.w(MethodCallHandlerImpl.channelName, "ActivityAware#onDetachedFromActivityForConfigChanges")
+    handler?.activity = null
   }
 
   // This static function is optional and equivalent to onAttachedToEngine. It supports the old
@@ -48,95 +57,23 @@ class FlutterSystemBarsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   // depending on the user's project. onAttachedToEngine or registerWith must both be defined
   // in the same class.
   companion object {
-    const val channelName = "flutter_system_bars"
-
     @JvmStatic
     fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), channelName)
-      channel.setMethodCallHandler(FlutterSystemBarsPlugin())
+      val plugin = FlutterSystemBarsPlugin()
+      plugin.setupChannel(registrar.messenger(), registrar.context(), registrar.activity())
     }
   }
 
-  override fun onMethodCall(call: MethodCall, result: Result) {
-    if(activityBinding == null) {
-      result.notImplemented()
-      return
-    }
-
-    when(call.method) {
-        "getPlatformVersion" -> result.success("Android ${Build.VERSION.RELEASE}")
-        "hasSoftwareNavigationBar" -> result.success(hasSoftKeys())
-        "softwareNavigationBarPhysicalHeight" -> result.success(getNavBarHeight())
-        "statusBarPhysicalHeight" -> result.success(getStatusBarHeight())
-        else -> result.notImplemented()
-    }
+  private fun setupChannel(messenger: BinaryMessenger,  context: Context,  activity: Activity?) {
+    channel = MethodChannel(messenger, MethodCallHandlerImpl.channelName);
+    handler = MethodCallHandlerImpl(context, activity);
+    channel?.setMethodCallHandler(handler);
   }
 
-  private fun hasSoftKeys(): Boolean {
-    val hasSoftwareKeys: Boolean
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      val d = activityBinding!!.activity.windowManager.defaultDisplay
-
-      val realDisplayMetrics = DisplayMetrics()
-      d.getRealMetrics(realDisplayMetrics)
-
-      val realHeight = realDisplayMetrics.heightPixels
-      val realWidth = realDisplayMetrics.widthPixels
-
-      val displayMetrics = DisplayMetrics()
-      d.getMetrics(displayMetrics)
-
-      val displayHeight = displayMetrics.heightPixels
-      val displayWidth = displayMetrics.widthPixels
-
-      hasSoftwareKeys = realWidth - displayWidth > 0 || realHeight - displayHeight > 0
-    } else {
-      val hasMenuKey = ViewConfiguration.get(activityBinding?.activity).hasPermanentMenuKey()
-      val hasBackKey = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK)
-      hasSoftwareKeys = !hasMenuKey && !hasBackKey
-    }
-    return hasSoftwareKeys
-  }
-
-  private fun getNavBarHeight(): Int {
-    val result = 0
-
-    if (hasSoftKeys()) {
-      //The device has a navigation bar
-      val resources = activityBinding!!.activity.resources
-
-      val orientation = resources.configuration.orientation
-      val resourceId: Int = if (isTablet()) {
-        resources.getIdentifier(if (orientation == Configuration.ORIENTATION_PORTRAIT) "navigation_bar_height" else "navigation_bar_height_landscape", "dimen", "android")
-      } else {
-        resources.getIdentifier(if (orientation == Configuration.ORIENTATION_PORTRAIT) "navigation_bar_height" else "navigation_bar_width", "dimen", "android")
-      }
-
-      if (resourceId > 0) {
-        return resources.getDimensionPixelSize(resourceId)
-      }
-    }
-    return result
-  }
-
-  private fun getStatusBarHeight(): Int {
-    var result = 0
-    val resourceId = activityBinding!!.activity.resources.getIdentifier("status_bar_height", "dimen", "android")
-    if (resourceId > 0) {
-      result = activityBinding!!.activity.resources.getDimensionPixelSize(resourceId)
-    }
-    return result
-  }
-
-  private fun isTablet(): Boolean {
-    return activityBinding!!.activity.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK >= Configuration.SCREENLAYOUT_SIZE_LARGE
-  }
-
-  override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-  }
-
-  override fun onDetachedFromActivity() {
+  private fun teardownChannel() {
+    channel?.setMethodCallHandler(null);
+    channel = null;
+    handler = null;
   }
 
 }
