@@ -21,8 +21,6 @@ class MethodCallHandlerImpl(val context: Context, var activity: Activity?): Meth
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         Log.w(MethodCallHandlerImpl.channelName, "MethodCallHandler#onMethodCall - ${call.method}")
-        Log.w(MethodCallHandlerImpl.channelName, "Has activity ${activity != null}")
-
 
         when(call.method) {
             "getPlatformVersion" -> result.success("Android ${Build.VERSION.RELEASE}")

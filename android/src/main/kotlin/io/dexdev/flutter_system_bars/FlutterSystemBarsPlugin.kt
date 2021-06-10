@@ -29,7 +29,6 @@ class FlutterSystemBarsPlugin: FlutterPlugin, ActivityAware {
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     Log.w(MethodCallHandlerImpl.channelName, "ActivityAware#onAttachedToActivity")
     handler?.activity = binding.activity
-    Log.w(MethodCallHandlerImpl.channelName, "Has activity ${handler?.activity != null}")
   }
 
   override fun onDetachedFromActivity() {
