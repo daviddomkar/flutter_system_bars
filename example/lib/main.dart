@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       home: Scaffold(
-        resizeToAvoidBottomPadding: false,
+        resizeToAvoidBottomInset: false,
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -38,14 +38,11 @@ class MyApp extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                             Text('Content is below',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.white, fontSize: 20)),
+                                textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 20)),
                             Text('While the app occupies the entire screen.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.white, fontSize: 20)),
+                                textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 20)),
                             Text('and above system bars.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.white, fontSize: 20)),
+                                textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 20)),
                           ])),
                     )),
               );

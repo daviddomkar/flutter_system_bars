@@ -1,6 +1,7 @@
 package io.dexdev.flutter_system_bars
 
-import android.app.Activity
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -12,22 +13,61 @@ import android.view.*
 import android.content.res.Configuration
 import android.view.KeyCharacterMap
 import android.view.ViewConfiguration
+import androidx.annotation.NonNull
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 
-class FlutterSystemBarsPlugin(private val activity: Activity): MethodCallHandler {
+class FlutterSystemBarsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
+
+  private lateinit var channel: MethodChannel
+  private var activityBinding: ActivityPluginBinding? = null
+
+  override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    channel = MethodChannel(flutterPluginBinding.binaryMessenger, channelName)
+    channel.setMethodCallHandler(FlutterSystemBarsPlugin())
+  }
+
+  override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    channel.setMethodCallHandler(null)
+  }
+
+  override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+    activityBinding = binding
+  }
+
+  override fun onDetachedFromActivityForConfigChanges() {
+    activityBinding = null
+  }
+
+  // This static function is optional and equivalent to onAttachedToEngine. It supports the old
+  // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
+  // plugin registration via this function while apps migrate to use the new Android APIs
+  // post-flutter-1.12 via https://flutter.dev/go/android-project-migration.
+  //
+  // It is encouraged to share logic between onAttachedToEngine and registerWith to keep
+  // them functionally equivalent. Only one of onAttachedToEngine or registerWith will be called
+  // depending on the user's project. onAttachedToEngine or registerWith must both be defined
+  // in the same class.
   companion object {
+    const val channelName = "flutter_system_bars"
+
     @JvmStatic
     fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "flutter_system_bars")
-      channel.setMethodCallHandler(FlutterSystemBarsPlugin(registrar.activity()))
+      val channel = MethodChannel(registrar.messenger(), channelName)
+      channel.setMethodCallHandler(FlutterSystemBarsPlugin())
     }
   }
 
   override fun onMethodCall(call: MethodCall, result: Result) {
-    when {
-        call.method == "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
-        call.method == "hasSoftwareNavigationBar" -> result.success(hasSoftKeys())
-        call.method == "softwareNavigationBarPhysicalHeight" -> result.success(getNavBarHeight())
-        call.method == "statusBarPhysicalHeight" -> result.success(getStatusBarHeight())
+    if(activityBinding == null) {
+      result.notImplemented()
+      return
+    }
+
+    when(call.method) {
+        "getPlatformVersion" -> result.success("Android ${Build.VERSION.RELEASE}")
+        "hasSoftwareNavigationBar" -> result.success(hasSoftKeys())
+        "softwareNavigationBarPhysicalHeight" -> result.success(getNavBarHeight())
+        "statusBarPhysicalHeight" -> result.success(getStatusBarHeight())
         else -> result.notImplemented()
     }
   }
@@ -36,7 +76,7 @@ class FlutterSystemBarsPlugin(private val activity: Activity): MethodCallHandler
     val hasSoftwareKeys: Boolean
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      val d = activity.windowManager.defaultDisplay
+      val d = activityBinding!!.activity.windowManager.defaultDisplay
 
       val realDisplayMetrics = DisplayMetrics()
       d.getRealMetrics(realDisplayMetrics)
@@ -52,7 +92,7 @@ class FlutterSystemBarsPlugin(private val activity: Activity): MethodCallHandler
 
       hasSoftwareKeys = realWidth - displayWidth > 0 || realHeight - displayHeight > 0
     } else {
-      val hasMenuKey = ViewConfiguration.get(activity).hasPermanentMenuKey()
+      val hasMenuKey = ViewConfiguration.get(activityBinding?.activity).hasPermanentMenuKey()
       val hasBackKey = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK)
       hasSoftwareKeys = !hasMenuKey && !hasBackKey
     }
@@ -64,11 +104,10 @@ class FlutterSystemBarsPlugin(private val activity: Activity): MethodCallHandler
 
     if (hasSoftKeys()) {
       //The device has a navigation bar
-      val resources = activity.resources
+      val resources = activityBinding!!.activity.resources
 
       val orientation = resources.configuration.orientation
-      val resourceId: Int
-      resourceId = if (isTablet()) {
+      val resourceId: Int = if (isTablet()) {
         resources.getIdentifier(if (orientation == Configuration.ORIENTATION_PORTRAIT) "navigation_bar_height" else "navigation_bar_height_landscape", "dimen", "android")
       } else {
         resources.getIdentifier(if (orientation == Configuration.ORIENTATION_PORTRAIT) "navigation_bar_height" else "navigation_bar_width", "dimen", "android")
@@ -83,14 +122,21 @@ class FlutterSystemBarsPlugin(private val activity: Activity): MethodCallHandler
 
   private fun getStatusBarHeight(): Int {
     var result = 0
-    val resourceId = activity.resources.getIdentifier("status_bar_height", "dimen", "android")
+    val resourceId = activityBinding!!.activity.resources.getIdentifier("status_bar_height", "dimen", "android")
     if (resourceId > 0) {
-      result = activity.resources.getDimensionPixelSize(resourceId)
+      result = activityBinding!!.activity.resources.getDimensionPixelSize(resourceId)
     }
     return result
   }
 
   private fun isTablet(): Boolean {
-    return activity.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK >= Configuration.SCREENLAYOUT_SIZE_LARGE
+    return activityBinding!!.activity.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK >= Configuration.SCREENLAYOUT_SIZE_LARGE
   }
+
+  override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+  }
+
+  override fun onDetachedFromActivity() {
+  }
+
 }
